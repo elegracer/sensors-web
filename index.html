@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>socket.io example</title>
+</head>
+
+<body>
+    <p id="status_label">Nothing is happening...</p>
+    <p id="notice_label">...</p>
+    <button id="btn_start" height="40px">Start Sending Data</button>
+    <button id="btn_stop" height="40px">Stop Sending Data</button>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        var is_sending = false;
+
+        function keep_sending_message() {
+            var cnt = 0;
+            if (is_sending) {
+                var buffer_array = new ArrayBuffer(65536 * 4);
+                var buffer_uint32_view = new Uint32Array(buffer_array);
+                for (var i = 0; i < buffer_uint32_view.length; ++i) {
+                    buffer_uint32_view[i] = cnt++;
+                }
+                socket.binary(true).emit('data', buffer_array);
+            }
+        };
+        function keep_sending_message2() {
+            var cnt = 0;
+            if (is_sending) {
+                var buffer_array = new ArrayBuffer(65536 * 4);
+                var buffer_uint32_view = new Uint32Array(buffer_array);
+                for (var i = 0; i < buffer_uint32_view.length; ++i) {
+                    buffer_uint32_view[i] = cnt;
+                    cnt += 1 << 16;
+                }
+                socket.binary(true).emit('data', buffer_array);
+            }
+        };
+
+        window.onload = function() {
+            var status_label = document.getElementById('status_label');
+            var notice_label = document.getElementById('notice_label');
+            var btn_start = document.getElementById('btn_start');
+            var btn_stop = document.getElementById('btn_stop');
+            btn_start.addEventListener('click', function() {
+                if (is_sending) {
+                    notice_label.innerHTML = 'already sending... click stop to stop...';
+                    return false;
+                }
+                is_sending = true;
+                status_label.innerHTML = 'Sending data...';
+                socket.emit('signal', 'start_recording');
+                setTimeout(keep_sending_message, 1000);
+                setTimeout(keep_sending_message2, 1000);
+                return false;
+            });
+            btn_stop.addEventListener('click', function() {
+                if (!is_sending) {
+                    notice_label.innerHTML = 'not sending... click start to start...';
+                    return false;
+                }
+                is_sending = false;
+                status_label.innerHTML = 'Not Sending data...';
+                socket.emit('signal', 'stop_recording');
+                return false;
+            });
+        }
+    </script>
+</body>
+
+</html>
